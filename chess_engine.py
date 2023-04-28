@@ -4,6 +4,8 @@
 #
 # Note: move log class inspired by Eddie Sharick
 #
+import logging
+
 from Piece import Rook, Knight, Bishop, Queen, King, Pawn
 from enums import Player
 
@@ -46,6 +48,10 @@ class game_state:
         self.white_king_can_castle = [True, True,
                                       True]  # Has king not moved, has Rook1(col=0) not moved, has Rook2(col=7) not moved
         self.black_king_can_castle = [True, True, True]
+
+        self.counter_of_checks = 0
+        self.counter_of_knight_moves = 0
+        self.tools = []
 
         # Initialize White pieces
         white_rook_1 = Rook('r', 0, 0, Player.PLAYER_1)
@@ -307,7 +313,7 @@ class game_state:
         return self._en_passant_previous
 
     # Move a piece
-    def move_piece(self, starting_square, ending_square, is_ai):
+    def move_piece(self, starting_square, ending_square, is_ai, is_real_move = False):
         current_square_row = starting_square[0]  # The integer row value of the starting square
         current_square_col = starting_square[1]  # The integer col value of the starting square
         next_square_row = ending_square[0]  # The integer row value of the ending square
@@ -457,6 +463,20 @@ class game_state:
                 else:
                     self.move_log.append(chess_move(starting_square, ending_square, self, self._is_check))
                     self.can_en_passant_bool = False
+                    if (is_real_move == True and moving_piece.get_name() is "n"):
+                        self.counter_of_knight_moves += 1
+                        logging.info("The knights have made %s moves so far", self.counter_of_knight_moves)
+
+                if (is_real_move == True):
+                    for i in range(8):
+                        for j in range(8):
+                            if self.board[i][j] is not Player.EMPTY:
+                                self.tools.append(
+                                    (self.board[i][j].get_name(), self.board[i][j].get_player()))
+                    logging.info(self.tools)
+                    self.tools = []
+                    if self.check_for_check(self._white_king_location, moving_piece.get_player())[0] or self.check_for_check(self._black_king_location, moving_piece.get_player())[0]:
+                       self.counter_of_checks += 1
 
                 if temp:
                     moving_piece.change_row_number(next_square_row)
@@ -854,7 +874,8 @@ class game_state:
                     # self._is_check = True
                     _checks.append((king_location_row + row_change[i], king_location_col + col_change[i]))
         # print([_checks, _pins, _pins_check])
-        return [_pins_check, _pins, _pins_check]
+
+        return [_checks, _pins, _pins_check]
 
 
 class chess_move():

@@ -11,6 +11,9 @@ import pygame as py
 import ai_engine
 from enums import Player
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 """Variables"""
 WIDTH = HEIGHT = 512  # width and height of the chess board
 DIMENSION = 8  # the dimensions of the chess board
@@ -121,9 +124,10 @@ def main():
 
     ai = ai_engine.chess_ai()
     game_state = chess_engine.game_state()
+    logging.info("White begin")
     if human_player is 'b':
         ai_move = ai.minimax_black(game_state, 3, -100000, 100000, True, Player.PLAYER_1)
-        game_state.move_piece(ai_move[0], ai_move[1], True)
+        game_state.move_piece(ai_move[0], ai_move[1], True, True)
 
     while running:
         for e in py.event.get():
@@ -148,17 +152,18 @@ def main():
                             valid_moves = []
                         else:
                             game_state.move_piece((player_clicks[0][0], player_clicks[0][1]),
-                                                  (player_clicks[1][0], player_clicks[1][1]), False)
+                                                  (player_clicks[1][0], player_clicks[1][1]), False, True)
                             square_selected = ()
                             player_clicks = []
                             valid_moves = []
 
                             if human_player is 'w':
                                 ai_move = ai.minimax_white(game_state, 3, -100000, 100000, True, Player.PLAYER_2)
-                                game_state.move_piece(ai_move[0], ai_move[1], True)
+                                game_state.move_piece(ai_move[0], ai_move[1], True, True)
                             elif human_player is 'b':
                                 ai_move = ai.minimax_black(game_state, 3, -100000, 100000, True, Player.PLAYER_1)
-                                game_state.move_piece(ai_move[0], ai_move[1], True)
+                                game_state.move_piece(ai_move[0], ai_move[1], True, True)
+
                     else:
                         valid_moves = game_state.get_valid_moves((row, col))
                         if valid_moves is None:
@@ -181,12 +186,16 @@ def main():
         if endgame == 0:
             game_over = True
             draw_text(screen, "Black wins.")
+            logging.info("Black wins\nThere were %s checks in this game", game_state.counter_of_checks + 1)
         elif endgame == 1:
             game_over = True
             draw_text(screen, "White wins.")
+            logging.info("White wins\nThere were %s checks in this game", game_state.counter_of_checks + 1)
         elif endgame == 2:
             game_over = True
             draw_text(screen, "Stalemate.")
+            logging.info("Stalemate\nThere were %s checks in this game", game_state.counter_of_checks + 1)
+
 
         clock.tick(MAX_FPS)
         py.display.flip()
